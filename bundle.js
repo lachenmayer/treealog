@@ -3810,7 +3810,112 @@ module.exports.createElement = nanoHtmlCreateElement
 },{"hyperx":"node_modules/hyperx/index.js","./append-child":"node_modules/nanohtml/lib/append-child.js","./svg-tags":"node_modules/nanohtml/lib/svg-tags.js","./bool-props":"node_modules/nanohtml/lib/bool-props.js","./direct-props":"node_modules/nanohtml/lib/direct-props.js"}],"node_modules/choo/html/index.js":[function(require,module,exports) {
 module.exports = require('nanohtml')
 
-},{"nanohtml":"node_modules/nanohtml/lib/browser.js"}],"node_modules/nanostate/parallel-state.js":[function(require,module,exports) {
+},{"nanohtml":"node_modules/nanohtml/lib/browser.js"}],"node_modules/cuid/lib/pad.js":[function(require,module,exports) {
+module.exports = function pad (num, size) {
+  var s = '000000000' + num;
+  return s.substr(s.length - size);
+};
+
+},{}],"node_modules/cuid/lib/fingerprint.browser.js":[function(require,module,exports) {
+var pad = require('./pad.js');
+
+var env = typeof window === 'object' ? window : self;
+var globalCount = Object.keys(env).length;
+var mimeTypesLength = navigator.mimeTypes ? navigator.mimeTypes.length : 0;
+var clientId = pad((mimeTypesLength +
+  navigator.userAgent.length).toString(36) +
+  globalCount.toString(36), 4);
+
+module.exports = function fingerprint () {
+  return clientId;
+};
+
+},{"./pad.js":"node_modules/cuid/lib/pad.js"}],"node_modules/cuid/index.js":[function(require,module,exports) {
+/**
+ * cuid.js
+ * Collision-resistant UID generator for browsers and node.
+ * Sequential for fast db lookups and recency sorting.
+ * Safe for element IDs and server-side lookups.
+ *
+ * Extracted from CLCTR
+ *
+ * Copyright (c) Eric Elliott 2012
+ * MIT License
+ */
+
+var fingerprint = require('./lib/fingerprint.js');
+var pad = require('./lib/pad.js');
+
+var c = 0,
+  blockSize = 4,
+  base = 36,
+  discreteValues = Math.pow(base, blockSize);
+
+function randomBlock () {
+  return pad((Math.random() *
+    discreteValues << 0)
+    .toString(base), blockSize);
+}
+
+function safeCounter () {
+  c = c < discreteValues ? c : 0;
+  c++; // this is not subliminal
+  return c - 1;
+}
+
+function cuid () {
+  // Starting with a lowercase letter makes
+  // it HTML element ID friendly.
+  var letter = 'c', // hard-coded allows for sequential access
+
+    // timestamp
+    // warning: this exposes the exact date and time
+    // that the uid was created.
+    timestamp = (new Date().getTime()).toString(base),
+
+    // Prevent same-machine collisions.
+    counter = pad(safeCounter().toString(base), blockSize),
+
+    // A few chars to generate distinct ids for different
+    // clients (so different computers are far less
+    // likely to generate the same id)
+    print = fingerprint(),
+
+    // Grab some more chars from Math.random()
+    random = randomBlock() + randomBlock();
+
+  return letter + timestamp + counter + print + random;
+}
+
+cuid.slug = function slug () {
+  var date = new Date().getTime().toString(36),
+    counter = safeCounter().toString(36).slice(-4),
+    print = fingerprint().slice(0, 1) +
+      fingerprint().slice(-1),
+    random = randomBlock().slice(-2);
+
+  return date.slice(-2) +
+    counter + print + random;
+};
+
+cuid.isCuid = function isCuid (stringToCheck) {
+  if (typeof stringToCheck !== 'string') return false;
+  if (stringToCheck.startsWith('c')) return true;
+  return false;
+};
+
+cuid.isSlug = function isSlug (stringToCheck) {
+  if (typeof stringToCheck !== 'string') return false;
+  var stringLength = stringToCheck.length;
+  if (stringLength >= 7 && stringLength <= 10) return true;
+  return false;
+};
+
+cuid.fingerprint = fingerprint;
+
+module.exports = cuid;
+
+},{"./lib/fingerprint.js":"node_modules/cuid/lib/fingerprint.browser.js","./lib/pad.js":"node_modules/cuid/lib/pad.js"}],"node_modules/nanostate/parallel-state.js":[function(require,module,exports) {
 var Nanobus = require('nanobus')
 var assert = require('assert')
 
@@ -3918,16 +4023,157 @@ Nanostate.prototype._next = function (eventName) {
   return this.transitions[this.state][eventName]
 }
 
-},{"nanobus":"node_modules/nanobus/index.js","assert":"node_modules/nanoassert/index.js","./parallel-state":"node_modules/nanostate/parallel-state.js"}],"index.js":[function(require,module,exports) {
+},{"nanobus":"node_modules/nanobus/index.js","assert":"node_modules/nanoassert/index.js","./parallel-state":"node_modules/nanostate/parallel-state.js"}],"node_modules/toposort/index.js":[function(require,module,exports) {
+
+/**
+ * Topological sorting function
+ *
+ * @param {Array} edges
+ * @returns {Array}
+ */
+
+module.exports = function(edges) {
+  return toposort(uniqueNodes(edges), edges)
+}
+
+module.exports.array = toposort
+
+function toposort(nodes, edges) {
+  var cursor = nodes.length
+    , sorted = new Array(cursor)
+    , visited = {}
+    , i = cursor
+    // Better data structures make algorithm much faster.
+    , outgoingEdges = makeOutgoingEdges(edges)
+    , nodesHash = makeNodesHash(nodes)
+
+  // check for unknown nodes
+  edges.forEach(function(edge) {
+    if (!nodesHash.has(edge[0]) || !nodesHash.has(edge[1])) {
+      throw new Error('Unknown node. There is an unknown node in the supplied edges.')
+    }
+  })
+
+  while (i--) {
+    if (!visited[i]) visit(nodes[i], i, new Set())
+  }
+
+  return sorted
+
+  function visit(node, i, predecessors) {
+    if(predecessors.has(node)) {
+      var nodeRep
+      try {
+        nodeRep = ", node was:" + JSON.stringify(node)
+      } catch(e) {
+        nodeRep = ""
+      }
+      throw new Error('Cyclic dependency' + nodeRep)
+    }
+
+    if (!nodesHash.has(node)) {
+      throw new Error('Found unknown node. Make sure to provided all involved nodes. Unknown node: '+JSON.stringify(node))
+    }
+
+    if (visited[i]) return;
+    visited[i] = true
+
+    var outgoing = outgoingEdges.get(node) || new Set()
+    outgoing = Array.from(outgoing)
+
+    if (i = outgoing.length) {
+      predecessors.add(node)
+      do {
+        var child = outgoing[--i]
+        visit(child, nodesHash.get(child), predecessors)
+      } while (i)
+      predecessors.delete(node)
+    }
+
+    sorted[--cursor] = node
+  }
+}
+
+function uniqueNodes(arr){
+  var res = new Set()
+  for (var i = 0, len = arr.length; i < len; i++) {
+    var edge = arr[i]
+    res.add(edge[0])
+    res.add(edge[1])
+  }
+  return Array.from(res)
+}
+
+function makeOutgoingEdges(arr){
+  var edges = new Map()
+  for (var i = 0, len = arr.length; i < len; i++) {
+    var edge = arr[i]
+    if (!edges.has(edge[0])) edges.set(edge[0], new Set())
+    if (!edges.has(edge[1])) edges.set(edge[1], new Set())
+    edges.get(edge[0]).add(edge[1])
+  }
+  return edges
+}
+
+function makeNodesHash(arr){
+  var res = new Map()
+  for (var i = 0, len = arr.length; i < len; i++) {
+    res.set(arr[i], i)
+  }
+  return res
+}
+
+},{}],"index.js":[function(require,module,exports) {
 const app = require('choo')();
 const Component = require('choo/component');
 const html = require('choo/html');
+const cuid = require('cuid');
+const assert = require('nanoassert');
 const nanostate = require('nanostate');
+const toposort = require('toposort');
 
-class CameraVideo extends Component {
+class NetworkInfo extends Component {
+  constructor() {
+    super();
+    this.onNetworkChanged = this.onNetworkChanged.bind(this);
+  }
+
+  createElement(archive) {
+    if (archive !== this.archive) {
+      if (this.archive != null) {
+        this.archive.removeEventListener('network-changed', this.onNetworkChanged);
+      }
+      this.archive = archive;
+      this.peers = 0;
+      this.archive.addEventListener('network-changed', this.onNetworkChanged);
+      this.archive.getInfo().then(({ peers }) => {
+        this.peers = peers;
+        this.rerender();
+      });
+    }
+    const id = archive.url.substr(6, 6);
+    return html`<div><span style="background-color: #${id};">${id}...</span> (${this.peers} peers)</div>`;
+  }
+
+  onNetworkChanged({ connections }) {
+    this.peers = connections;
+    this.rerender();
+  }
+
+  unload() {
+    this.archive.removeEventListener(this.onNetworkChanged);
+  }
+
+  update() {
+    return false;
+  }
+}
+
+class CameraPreview extends Component {
   createElement(stream) {
     if (this.video == null) {
       this.video = html`<video width=320 height=240></video>`;
+      this.video.muted = true;
       this.video.srcObject = stream;
       this.video.play();
     }
@@ -3943,7 +4189,7 @@ class CameraVideo extends Component {
   }
 }
 
-class PreviewVideo extends Component {
+class RecordingPreview extends Component {
   createElement(blob) {
     if (this.video == null) {
       this.video = html`<video width=320 height=240></video>`;
@@ -3970,10 +4216,13 @@ class PreviewVideo extends Component {
   }
 }
 
-// emits 'new-recording' event when recording is complete
+// emits 'recorded' event when recording is complete
 class Recorder extends Component {
-  constructor() {
+  constructor(responseTo, _globalState, emit) {
     super();
+
+    this.responseTo = responseTo;
+    this.emitGlobal = emit;
 
     this.state = nanostate('initial', {
       initial: { show: 'permissions' },
@@ -3987,11 +4236,15 @@ class Recorder extends Component {
     });
 
     this.state.on('initial', () => {
+      // permissions
       this.stream = null;
-      this.cameraVideo = null;
-      this.previewVideo = null;
       this.error = null;
+      this.cameraPreview = null;
+      // recording
       this.recorder = null;
+      // postrecording
+      this.recordingPreview = null;
+      this.recording = null;
     });
 
     this.state.on('permissions', async () => {
@@ -4000,7 +4253,7 @@ class Recorder extends Component {
           audio: true,
           video: true
         });
-        this.cameraVideo = new CameraVideo();
+        this.cameraPreview = new CameraPreview();
         this.state.emit('accepted');
       } catch (e) {
         this.error = e;
@@ -4015,7 +4268,7 @@ class Recorder extends Component {
 
     this.state.on('postrecording', () => {
       this.recorder.ondataavailable = event => {
-        this.previewVideo = new PreviewVideo();
+        this.recordingPreview = new RecordingPreview();
         this.recording = event.data;
         this.state.emit('recorded');
       };
@@ -4023,7 +4276,10 @@ class Recorder extends Component {
     });
 
     this.state.on('done', () => {
-      this.emitGlobal('new-recording', this.recording);
+      this.emitGlobal('recorded', {
+        responseTo: this.responseTo,
+        recording: this.recording
+      });
       this.state.emit('reset');
     });
 
@@ -4032,13 +4288,12 @@ class Recorder extends Component {
     });
   }
 
-  createElement(emit) {
-    this.emitGlobal = emit;
+  createElement() {
     const state = this.state.state;
 
     if (state === 'initial') {
       return html`<div>
-        ${button('respond to this', () => this.state.emit('show'))}
+        ${button(this.responseTo === Recorder.first ? 'start the conversation' : 'respond to this', () => this.state.emit('show'))}
       </div>`;
     }
 
@@ -4061,7 +4316,7 @@ class Recorder extends Component {
     if (state === 'prerecording') {
       return html`
         <div>
-          ${this.cameraVideo.render(this.stream)}
+          ${this.cameraPreview.render(this.stream)}
           ${button('start recording', () => this.state.emit('record'))}
         </div>
       `;
@@ -4070,7 +4325,7 @@ class Recorder extends Component {
     if (state === 'recording') {
       return html`
         <div>
-          ${this.cameraVideo.render(this.stream)}
+          ${this.cameraPreview.render(this.stream)}
           ${button('finish recording', () => this.state.emit('finish'))}
         </div>
       `;
@@ -4082,9 +4337,9 @@ class Recorder extends Component {
 
     if (state === 'preview') {
       return html`<div>
-        ${this.previewVideo.render(this.recording)}
-        ${button('redo', () => this.state.emit('redo'))}
+        ${this.recordingPreview.render(this.recording)}
         ${button('use this recording', () => this.state.emit('use'))}
+        ${button('redo', () => this.state.emit('redo'))}
       </div>`;
     }
 
@@ -4092,7 +4347,7 @@ class Recorder extends Component {
       return html`<div>saving recording...</div>`;
     }
 
-    return html`<div>unimplemented state "${state}"</div>`;
+    return html`<div>internal error: unimplemented state "${state}"</div>`;
 
     function button(text, action) {
       return html`<div class="button" onclick=${action}>${text}</div>`;
@@ -4104,22 +4359,223 @@ class Recorder extends Component {
   }
 }
 
-const recorder = new Recorder();
+Recorder.first = 'first';
 
 app.route('/', (state, emit) => {
+  if (state.conversation == null) {
+    return html`<main>TODO choose conversation</main>`;
+  }
   return html`
     <main>
-      ${recorder.render(emit)}
+      ${state.participants.map(archive => state.cache(NetworkInfo, archive.url).render(archive))}
+      ${!state.readOnly && Object.keys(state.videos).length === 0 ? state.cache(Recorder, Recorder.first).render() : renderVideos()}
     </main>
   `;
+
+  function renderVideos() {
+    return html`<div style="display: flex; flex-direction: row">${state.firsts.map(url => renderVideo(state.videos[url]))}</div>`;
+  }
+
+  function renderVideo(video) {
+    return html`<div>
+      <video controls width="320" height="240" src="${video.url}"></video>
+      ${state.readOnly ? '' : state.cache(Recorder, video.url).render()}
+      responses:
+      <div style="display: flex; flex-direction: row">${video.responses.map(renderVideo)}</div>
+    </div>`;
+  }
 });
 
-app.use((state, emitter) => {
-  emitter.on('new-recording', blob => {
-    console.log(blob);
+app.use(async (state, emitter) => {
+  // initial state
+  state.conversation = null;
+  state.participants = [];
+  state.readOnly = true;
+  state.firsts = [];
+  state.videos = {};
+
+  // this is the app archive. it only contains the code.
+  // for every conversation, it creates a new conversation archive.
+  // the conversation archive is created by the conversation starter (owner of conversation archive)
+  // and links to participant archives
+  // every user taking part in the conversation has a participant archives
+  // the participant archive contains every user's videos and profile info
+
+  const appArchive = new DatArchive(location);
+
+  //
+  // TODO fake stuff
+  //
+  const participantUrl = await __TODO__getHardcodedParticipantUrl(appArchive);
+  const conversationUrl = await __TODO__getHardcodedConversationUrl(appArchive);
+  const conversation = await DatArchive.load(conversationUrl);
+  await __TODO__setupFakeConversation(conversation, participantUrl);
+
+  //
+  // add more people to a conversation
+  //
+  const { isOwner: conversationOwner } = await conversation.getInfo();
+  if (conversationOwner) {
+    // TODO enable inviting more people
+  } else {}
+    // TODO enable creating a new conversation
+
+
+    //
+    // get participants in conversation
+    //
+  let participantInfos = [];
+  try {
+    const participantFiles = await conversation.readdir('participants', {
+      timeout: 30e3 /* we wanna make sure everyone's stuff shows up */
+    });
+    for (let file of participantFiles) {
+      const content = await conversation.readFile('participants/' + file);
+      const participant = JSON.parse(content);
+      participantInfos.push(participant);
+    }
+  } catch (e) {
+    if (e.name === 'NotFoundError') {
+      throw new Error('talk-tree: could not find participants directory. are you sure this is a talk-tree conversation?');
+    } else {
+      console.warn(e);
+    }
+  }
+
+  const participants = await Promise.all(participantInfos.map(({ url }) => DatArchive.load(url)));
+  let me = null;
+  for (let participant of participants) {
+    const { isOwner } = await participant.getInfo();
+    if (isOwner) {
+      me = participant;
+      break;
+    }
+    // TODO what if several are owned by me
+  }
+
+  //
+  // build talk tree
+  //
+
+  // get all video metadata
+  const videos = {};
+  for (let participant of participants) {
+    try {
+      const videoFiles = await participant.readdir('videos');
+      for (let fileName of videoFiles) {
+        if (fileName.endsWith('json')) {
+          const content = await participant.readFile('videos/' + fileName);
+          const video = JSON.parse(content);
+          videos[video.url] = video;
+          videos[video.url].responses = [];
+        }
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }
+
+  const firsts = [];
+  for (let video of Object.values(videos)) {
+    if (video.responseTo != null) {
+      const responseTo = videos[video.responseTo];
+      if (responseTo != null) {
+        responseTo.responses.push(video);
+      } else {
+        console.warn('talk-tree: could not find video', video.responseTo, 'which this video is a response to:', video);
+      }
+    } else {
+      firsts.push(video.url);
+    }
+  }
+
+  state.conversation = conversation;
+  state.participants = participants;
+  state.readOnly = me == null;
+  state.firsts = firsts;
+  state.videos = videos;
+  console.log(state.videos, state.firsts);
+  emitter.emit('render');
+
+  emitter.on('recorded', async ({ recording, responseTo }) => {
+    assert.ok(me, 'recorder should never be visible when read-only');
+    const buffer = await toArrayBuffer(recording);
+    try {
+      await me.mkdir('videos');
+    } catch (e) {
+      console.warn(e);
+    }
+    const id = cuid();
+    console.log(me.url);
+    await me.writeFile(`videos/${id}.webm`, buffer);
+    await me.writeFile(`videos/${id}.json`, JSON.stringify({
+      url: `${me.url}/videos/${id}.webm`,
+      conversation: conversation.url,
+      responseTo: responseTo === Recorder.first ? null : responseTo
+    }));
   });
 });
 
 app.mount('main');
-},{"choo":"node_modules/choo/index.js","choo/component":"node_modules/choo/component/index.js","choo/html":"node_modules/choo/html/index.js","nanostate":"node_modules/nanostate/index.js"}]},{},["index.js"], null)
+
+async function toArrayBuffer(blob) {
+  const response = new Response(blob);
+  const buffer = await response.arrayBuffer();
+  return buffer;
+}
+
+async function __TODO__getHardcodedParticipantUrl(appArchive) {
+  let profileUrl;
+  try {
+    profileUrl = await appArchive.readFile('__TODO__profile-url');
+  } catch (e) {
+    if (e.name === 'NotFoundError') {
+      const newArchive = await DatArchive.create({
+        title: 'TODO profile',
+        type: ['profile', 'talk-tree-profile'],
+        prompt: false
+      });
+      await newArchive.writeFile('profile.json', JSON.stringify({ name: 'harry' }));
+      await appArchive.writeFile('__TODO__profile-url', newArchive.url);
+      profileUrl = newArchive.url;
+    } else {
+      throw e;
+    }
+  }
+  return profileUrl;
+}
+
+async function __TODO__getHardcodedConversationUrl(appArchive) {
+  let conversationUrl;
+  try {
+    conversationUrl = await appArchive.readFile('__TODO__conversation-url');
+  } catch (e) {
+    if (e.name === 'NotFoundError') {
+      const newArchive = await DatArchive.create({
+        title: 'TODO test conversation',
+        type: ['talk-tree-conversation'],
+        prompt: false
+      });
+      await appArchive.writeFile('__TODO__conversation-url', newArchive.url);
+      conversationUrl = newArchive.url;
+    } else {
+      throw e;
+    }
+  }
+  return conversationUrl;
+}
+
+async function __TODO__setupFakeConversation(conversation, profileUrl) {
+  try {
+    await conversation.readdir('participants', { timeout: 30e3 });
+  } catch (e) {
+    if (e.name === 'NotFoundError') {
+      await conversation.mkdir('participants');
+      await conversation.writeFile('participants/0.json', JSON.stringify({ url: profileUrl }));
+    } else {
+      throw e;
+    }
+  }
+}
+},{"choo":"node_modules/choo/index.js","choo/component":"node_modules/choo/component/index.js","choo/html":"node_modules/choo/html/index.js","cuid":"node_modules/cuid/index.js","nanoassert":"node_modules/nanoassert/index.js","nanostate":"node_modules/nanostate/index.js","toposort":"node_modules/toposort/index.js"}]},{},["index.js"], null)
 //# sourceMappingURL=/bundle.map

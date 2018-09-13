@@ -9,7 +9,10 @@
   },
   "dependencies": {
     "choo": "^6.13.0",
-    "nanostate": "^1.2.1"
+    "cuid": "^2.1.4",
+    "nanoassert": "^1.1.0",
+    "nanostate": "^1.2.1",
+    "toposort": "^2.0.2"
   },
   "devDependencies": {
     "parcel": "^1.9.7"
