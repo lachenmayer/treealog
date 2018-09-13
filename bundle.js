@@ -4152,7 +4152,7 @@ class NetworkInfo extends Component {
       });
     }
     const id = archive.url.substr(6, 6);
-    return html`<div><span style="background-color: #${id};">${id}...</span> (${this.peers} peers)</div>`;
+    return html`<div><a href="${archive.url}" target="_blank"><span style="background-color: #${id};">${id}...</span></a> (${this.peers} peers)</div>`;
   }
 
   onNetworkChanged({ connections }) {
