@@ -337,7 +337,7 @@ app.use(async (state, emitter) => {
   } catch (e) {
     if (e.name === 'NotFoundError') {
       throw new Error(
-        'talk-tree: could not find participants directory. are you sure this is a talk-tree conversation?'
+        'treealog: could not find participants directory. are you sure this is a treealog conversation?'
       )
     } else {
       console.warn(e)
@@ -387,7 +387,7 @@ app.use(async (state, emitter) => {
         responseTo.responses.push(video)
       } else {
         console.warn(
-          'talk-tree: could not find video',
+          'treealog: could not find video',
           video.responseTo,
           'which this video is a response to:',
           video
@@ -444,7 +444,7 @@ async function __TODO__getHardcodedParticipantUrl(appArchive) {
     if (e.name === 'NotFoundError') {
       const newArchive = await DatArchive.create({
         title: 'TODO profile',
-        type: ['profile', 'talk-tree-profile'],
+        type: ['profile', 'treealog-profile'],
         prompt: false,
       })
       await newArchive.writeFile(
@@ -468,7 +468,7 @@ async function __TODO__getHardcodedConversationUrl(appArchive) {
     if (e.name === 'NotFoundError') {
       const newArchive = await DatArchive.create({
         title: 'TODO test conversation',
-        type: ['talk-tree-conversation'],
+        type: ['treealog-conversation'],
         prompt: false,
       })
       await appArchive.writeFile('__TODO__conversation-url', newArchive.url)

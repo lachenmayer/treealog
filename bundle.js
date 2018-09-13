@@ -4436,7 +4436,7 @@ app.use(async (state, emitter) => {
     }
   } catch (e) {
     if (e.name === 'NotFoundError') {
-      throw new Error('talk-tree: could not find participants directory. are you sure this is a talk-tree conversation?');
+      throw new Error('treealog: could not find participants directory. are you sure this is a treealog conversation?');
     } else {
       console.warn(e);
     }
@@ -4482,7 +4482,7 @@ app.use(async (state, emitter) => {
       if (responseTo != null) {
         responseTo.responses.push(video);
       } else {
-        console.warn('talk-tree: could not find video', video.responseTo, 'which this video is a response to:', video);
+        console.warn('treealog: could not find video', video.responseTo, 'which this video is a response to:', video);
       }
     } else {
       firsts.push(video.url);
@@ -4532,7 +4532,7 @@ async function __TODO__getHardcodedParticipantUrl(appArchive) {
     if (e.name === 'NotFoundError') {
       const newArchive = await DatArchive.create({
         title: 'TODO profile',
-        type: ['profile', 'talk-tree-profile'],
+        type: ['profile', 'treealog-profile'],
         prompt: false
       });
       await newArchive.writeFile('profile.json', JSON.stringify({ name: 'harry' }));
@@ -4553,7 +4553,7 @@ async function __TODO__getHardcodedConversationUrl(appArchive) {
     if (e.name === 'NotFoundError') {
       const newArchive = await DatArchive.create({
         title: 'TODO test conversation',
-        type: ['talk-tree-conversation'],
+        type: ['treealog-conversation'],
         prompt: false
       });
       await appArchive.writeFile('__TODO__conversation-url', newArchive.url);
