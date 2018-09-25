@@ -6,3 +6,4 @@ node_modules
 Thumbs.db
 .cache
 *.map
+bundle.js
