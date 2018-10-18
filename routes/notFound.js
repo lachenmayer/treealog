@@ -1,7 +1,5 @@
 const html = require('choo/html')
 
-function view(state, emit) {
+module.exports = function notFound(state, emit) {
   return html`<main>TODO not found</main>`
 }
-
-module.exports = { view }

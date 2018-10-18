@@ -1,5 +1,6 @@
 const Component = require('choo/component')
 const html = require('choo/html')
+const Conversation = require('../modules/conversation')
 const cuid = require('cuid')
 const assert = require('nanoassert')
 const nanostate = require('nanostate')
@@ -8,7 +9,10 @@ const nanostate = require('nanostate')
 // VIEW
 //
 
-function view(state, emit) {
+module.exports = function conversation(state, emit) {
+  const url = state.params.url // defined in index.js
+  return state.cache(ConversationView, url).render()
+
   const conversation = state.conversation
   if (conversation == null) {
     return html`<main>loading...</main>`
@@ -48,6 +52,50 @@ function view(state, emit) {
         renderVideo
       )}</div>
     </div>`
+  }
+}
+
+class ConversationView extends Component {
+  constructor(url) {
+    super()
+    this.url = url
+    this.conversation = new Conversation(url)
+    const onload = () => this.rerender()
+    this.conversation
+      .load()
+      .then(onload)
+      .catch(onload)
+  }
+
+  createElement() {
+    if (!this.conversation.loaded) {
+      return html`<main>loading...</main>`
+    }
+    if (!this.conversation.isConversation) {
+      const url = 'dat://' + this.url
+      return html`<main><p>the archive <a href=${url}>${url}</a> does not contain a conversation.</p> ${
+        this.conversation.isOwner
+          ? html`<p><button onclick=${() => {
+              this._createConversation()
+            }}>create a conversation in this archive</button></p>`
+          : html`<p>the owner of the archive can create a new conversation here.</p>`
+      }</main>`
+    }
+
+    // if (isOwner) {
+    //   // TODO enable inviting more people
+    // } else {
+    //   // TODO enable creating a new conversation
+    // }
+  }
+
+  unload() {
+    this.conversation = null
+  }
+
+  async _createConversation() {
+    await this.conversation.createConversation()
+    this.rerender()
   }
 }
 
@@ -301,128 +349,12 @@ Recorder.first = 'first'
 //
 
 async function store(state, emitter) {
-  const initialState = {
-    error: null,
-    archive: null,
-    participants: [],
-    readOnly: true,
-    firsts: [],
-    videos: {},
-  }
-  state.conversation = state.conversation || initialState
-
   // this is the app archive. it only contains the code.
   // for every conversation, it creates a new conversation archive.
   // the conversation archive is created by the conversation starter (owner of conversation archive)
   // and links to participant archives
   // every user taking part in the conversation has a participant archives
   // the participant archive contains every user's videos and profile info
-
-  try {
-    const url = 'dat://' + state.params.url
-    const archive = await DatArchive.load(url)
-
-    //
-    // add more people to a conversation
-    //
-    const { isOwner: conversationOwner } = await archive.getInfo()
-    if (conversationOwner) {
-      // TODO enable inviting more people
-    } else {
-      // TODO enable creating a new conversation
-    }
-
-    //
-    // get participants in conversation
-    //
-    let participantInfos = []
-    try {
-      const participantFiles = await archive.readdir('participants', {
-        timeout: 30e3 /* we wanna make sure everyone's stuff shows up */,
-      })
-      for (let file of participantFiles) {
-        const content = await archive.readFile('participants/' + file)
-        const participant = JSON.parse(content)
-        participantInfos.push(participant)
-      }
-    } catch (e) {
-      if (e.name === 'NotFoundError') {
-        throw new Error(
-          'treealog: could not find participants directory. are you sure this is a treealog conversation?'
-        )
-      } else {
-        console.warn(e)
-      }
-    }
-
-    const participants = await Promise.all(
-      participantInfos.map(({ url }) => DatArchive.load(url))
-    )
-    let me = null
-    for (let participant of participants) {
-      const { isOwner } = await participant.getInfo()
-      if (isOwner) {
-        me = participant
-        break
-      }
-      // TODO what if several are owned by me
-    }
-
-    //
-    // build talk tree
-    //
-
-    // get all video metadata
-    const videos = {}
-    for (let participant of participants) {
-      try {
-        const videoFiles = await participant.readdir('videos')
-        for (let fileName of videoFiles) {
-          if (fileName.endsWith('json')) {
-            const content = await participant.readFile('videos/' + fileName)
-            const video = JSON.parse(content)
-            videos[video.url] = video
-            videos[video.url].responses = []
-          }
-        }
-      } catch (e) {
-        console.warn(e)
-      }
-    }
-
-    const firsts = []
-    for (let video of Object.values(videos)) {
-      if (video.responseTo != null) {
-        const responseTo = videos[video.responseTo]
-        if (responseTo != null) {
-          responseTo.responses.push(video)
-        } else {
-          console.warn(
-            'treealog: could not find video',
-            video.responseTo,
-            'which this video is a response to:',
-            video
-          )
-        }
-      } else {
-        firsts.push(video.url)
-      }
-    }
-
-    state.conversation = {
-      archive,
-      participants,
-      readOnly: me == null,
-      firsts,
-      videos,
-    }
-    emitter.emit('render')
-  } catch (error) {
-    console.error(error)
-    state.conversation = { error }
-    emitter.emit('render')
-    return
-  }
 
   emitter.on('recorded', async ({ recording, responseTo }) => {
     assert.ok(me, 'recorder should never be visible when read-only')
@@ -446,74 +378,8 @@ async function store(state, emitter) {
   })
 }
 
-function cleanup(state, emitter) {
-  state.conversation = null
-}
-
 async function toArrayBuffer(blob) {
   const response = new Response(blob)
   const buffer = await response.arrayBuffer()
   return buffer
 }
-
-async function __TODO__getHardcodedParticipantUrl(appArchive) {
-  let profileUrl
-  try {
-    profileUrl = await appArchive.readFile('__TODO__profile-url')
-  } catch (e) {
-    if (e.name === 'NotFoundError') {
-      const newArchive = await DatArchive.create({
-        title: 'TODO profile',
-        type: ['profile', 'treealog-profile'],
-        prompt: false,
-      })
-      await newArchive.writeFile(
-        'profile.json',
-        JSON.stringify({ name: 'harry' })
-      )
-      await appArchive.writeFile('__TODO__profile-url', newArchive.url)
-      profileUrl = newArchive.url
-    } else {
-      throw e
-    }
-  }
-  return profileUrl
-}
-
-async function __TODO__getHardcodedConversationUrl(appArchive) {
-  let conversationUrl
-  try {
-    conversationUrl = await appArchive.readFile('__TODO__conversation-url')
-  } catch (e) {
-    if (e.name === 'NotFoundError') {
-      const newArchive = await DatArchive.create({
-        title: 'TODO test conversation',
-        type: ['treealog-conversation'],
-        prompt: false,
-      })
-      await appArchive.writeFile('__TODO__conversation-url', newArchive.url)
-      conversationUrl = newArchive.url
-    } else {
-      throw e
-    }
-  }
-  return conversationUrl
-}
-
-async function __TODO__setupFakeConversation(conversation, profileUrl) {
-  try {
-    await conversation.readdir('participants', { timeout: 30e3 })
-  } catch (e) {
-    if (e.name === 'NotFoundError') {
-      await conversation.mkdir('participants')
-      await conversation.writeFile(
-        'participants/0.json',
-        JSON.stringify({ url: profileUrl })
-      )
-    } else {
-      throw e
-    }
-  }
-}
-
-module.exports = { view, store, cleanup }

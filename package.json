@@ -8,9 +8,10 @@
     "dev": "parcel watch --out-file bundle.js --out-dir . index.js --no-hmr"
   },
   "dependencies": {
-    "choo": "https://github.com/lachenmayer/choo/#initial-store-route",
+    "choo": "^6.13.0",
     "cuid": "^2.1.4",
     "nanoassert": "^1.1.0",
+    "nanobus": "^4.3.4",
     "nanostate": "^1.2.1"
   },
   "devDependencies": {
