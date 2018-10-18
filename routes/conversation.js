@@ -1,7 +1,7 @@
 const Component = require('choo/component')
 const html = require('choo/html')
-const { events } = require('treealog/constants')
 const Recorder = require('treealog/components/recorder')
+const { events } = require('treealog/constants')
 const Conversation = require('treealog/lib/conversation')
 const Participant = require('treealog/lib/participant')
 
@@ -35,66 +35,110 @@ class ConversationView extends Component {
       .then(onload)
       .catch(onerror)
   }
-
-  async onFirstVideo(videoBlob) {
-    const me = await Participant.create(this.conversation.url)
-    me.addVideo(videoBlob, null /* first video has no response */)
-    await this.conversation.addParticipant(me)
-    this.rerender()
-  }
-
   createElement() {
     if (this.conversation == null) {
-      const url = 'dat://' + this.url
-      return html`<main>
-        <p>the archive <a href=${url}>${url}</a> does not contain a conversation.</p>
-        <p><button onclick=${
-          this.createConversation
-        }>create a new conversation</button></p>
-      </main>`
+      return this.renderNoConversation()
     }
     if (!this.conversation.loaded) {
-      return html`<main>loading...</main>`
+      return this.renderLoading()
     }
 
     const firstUse =
       this.conversation.isOwner && this.conversation.participants.length == 0
     if (firstUse) {
-      return html`<main>
-        <p>This is a brand-new conversation. <strong>Record your first video to get started!</strong></p>
-        ${this.cache(Recorder, Recorder.first).render({
-          onRecorded: video => {
-            this.onFirstVideo(video)
-          },
-        })}
-      </main>`
+      return this.renderFirstUse()
     }
 
-    return html`<main>${Object.values(this.conversation.videos).map(v =>
-      JSON.stringify(v)
-    )}</main>`
-
-    // function renderVideos() {
-    //   return html`<div style="display: flex; flex-direction: row">${conversation.firsts.map(
-    //     url => renderVideo(conversation.videos[url])
-    //   )}</div>`
-    // }
-
-    // function renderVideo(video) {
-    //   return html`<div>
-    //   <video controls width="320" height="240" src="${video.url}"></video>
-    //   ${conversation.readOnly ? '' : state.cache(Recorder, video.url).render()}
-    //   responses:
-    //   <div style="display: flex; flex-direction: row">${video.responses.map(
-    //     renderVideo
-    //   )}</div>
-    // </div>`
-    // }
+    return this.renderConversation()
 
     // if (isOwner) {
     //   // TODO enable inviting more people
     // } else {
     //   // TODO enable creating a new conversation
     // }
+  }
+
+  renderNoConversation() {
+    const url = 'dat://' + this.url
+    return html`<main>
+      <p>the archive <a href=${url}>${url}</a> does not contain a conversation.</p>
+      <p><button onclick=${
+        this.createConversation
+      }>create a new conversation</button></p>
+    </main>`
+  }
+
+  renderLoading() {
+    return html`<main>loading...</main>`
+  }
+
+  renderFirstUse() {
+    return html`<main>
+    <p>This is a brand-new conversation. <strong>Record your first video to get started!</strong></p>
+    ${this.cache(Recorder, Recorder.first).render({
+      onRecorded: video => {
+        this.onFirstVideo(video)
+      },
+    })}
+  </main>`
+  }
+
+  renderConversation() {
+    return html`<main>
+      ${this.renderVideos(this.conversation.firsts)}
+    </main>`
+  }
+
+  renderVideos(videos) {
+    return html`<div style="display: flex; flex-direction: row">
+      ${videos.map(url => this.renderVideo(this.conversation.videos[url]))}
+    </div>`
+  }
+
+  renderVideo(video) {
+    if (video == null) {
+      return ''
+    }
+    const readOnly = this.conversation.readOnly
+    return html`<div>
+      <video controls width="320" height="240" src="${video.url}"></video>
+      ${
+        readOnly
+          ? ''
+          : this.cache(Recorder, video.url).render({
+              responseTo: video.url,
+              onRecorded: blob => {
+                this.onResponse(blob, video.url)
+              },
+            })
+      }
+      ${this.renderResponses(video)}
+    </div>`
+  }
+
+  renderResponses(video) {
+    if (video.responses.length > 0) {
+      console.log(video.responses)
+      return html`<div>
+        responses:
+        ${this.renderVideos(video.responses)}
+      </div>`
+    } else {
+      return ''
+    }
+  }
+
+  async onFirstVideo(videoBlob) {
+    const me = await Participant.create(this.conversation.url)
+    await me.addVideo(videoBlob, null /* first video has no response */)
+    await this.conversation.addParticipant(me)
+    this.rerender()
+  }
+
+  async onResponse(videoBlob, responseTo) {
+    const me = this.conversation.me
+    await me.addVideo(videoBlob, responseTo)
+    await this.conversation.load() // TODO automatic sync
+    this.rerender()
   }
 }
