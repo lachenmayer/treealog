@@ -1,17 +1,73 @@
 // const EventEmitter = require('nanobus')
+const constants = require('treealog/constants')
 
 class Conversation {
-  constructor(url) {
-    this.url = url
+  // Creates a conversation archive & returns a Conversation object.
+  // Returns null if the user does not give permission to create the archive.
+  static async create() {
+    try {
+      const archive = await DatArchive.create({
+        title: 'A treealog conversation',
+        type: [constants.conversationArchiveType],
+      })
 
-    this.archive = null
+      await archive.mkdir('treealog')
+      await archive.mkdir('treealog/participants')
+
+      const conversation = new Conversation(archive)
+      return conversation
+    } catch (e) {
+      console.warn(e)
+      return null
+    }
+  }
+
+  // Opens the archive selection modal for the user.
+  // Returns null if the user does not select an archive.
+  static async select() {
+    try {
+      const archive = await DatArchive.selectArchive({
+        title: 'Choose a conversation',
+        buttonLabel: 'Go to conversation',
+        filters: {
+          type: constants.conversationArchiveType,
+        },
+      })
+      return new Conversation(archive)
+    } catch (e) {
+      console.warn(e)
+      return null
+    }
+  }
+
+  // Creates a participant archive & returns it.
+  // Throws if the user does not give permission to create the archive.
+  static async createParticipant(conversationUrl) {
+    const participant = await DatArchive.create({
+      title: 'A treealog participant',
+      description:
+        'This archive contains all of your contributions to the conversation.',
+      type: [constants.participantArchiveType],
+      links: {
+        [constants.conversationArchiveType]: [{ href: conversationUrl }],
+      },
+    })
+    await participant.mkdir('videos')
+    return participant
+  }
+
+  constructor(urlOrArchive) {
+    if (typeof urlOrArchive === 'string') {
+      const url = protocolify(urlOrArchive)
+      this.archive = new DatArchive(url)
+    } else {
+      this.archive = urlOrArchive
+    }
+    this.url = this.archive.url
 
     // true when archive has successfully been loaded
     // can be true even when the url does not contain a valid conversation
     this.loaded = false
-
-    // true when the archive actually contains a valid treealog conversation
-    this.isConversation = false
 
     // true when I am the owner of the conversation archive
     this.isOwner = false
@@ -22,13 +78,11 @@ class Conversation {
     this.firsts = []
   }
 
-  // throws NotSetupError
+  // throws NoConversationError
   async load() {
-    this.archive = this.archive || (await DatArchive.load('dat://' + this.url))
-    this.loaded = true
-
     const { isOwner } = await this.archive.getInfo()
     this.isOwner = isOwner
+    this.loaded = true
 
     //
     // get participants in conversation
@@ -50,8 +104,7 @@ class Conversation {
       }
     } catch (e) {
       if (e.name === 'NotFoundError') {
-        this.isConversation = false
-        return
+        throw new NoConversationError()
       } else {
         console.error(e)
       }
@@ -116,11 +169,22 @@ class Conversation {
     this.videos = videos
     this.firsts = firsts
   }
+}
 
-  async createConversation() {
-    await this.archive.writeFile()
-    // TODO write treealog.json
+class NoConversationError extends Error {
+  constructor() {
+    super('treealog: There is no conversation in this archive.')
+    this.noConversation = true
   }
+}
+
+// dat://foo => dat://foo
+// foo => dat://foo
+function protocolify(url) {
+  if (url.startsWith('dat://')) {
+    return url
+  }
+  return 'dat://' + url
 }
 
 module.exports = Conversation

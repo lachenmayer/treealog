@@ -1,37 +1,19 @@
-const Conversation = require('../modules/conversation')
+const Conversation = require('treealog/conversation')
 
-const events = require('../events')
+const { events } = require('treealog/constants')
 
-const constants = {
-  conversationArchiveType: ['treealog-conversation'],
-}
-
-module.exports = function conversationsStore(state, emitter) {
+module.exports = function conversationsStore(_, emitter) {
   emitter.on(events.selectConversation, async () => {
-    try {
-      const conversation = await DatArchive.selectArchive({
-        title: 'Choose a conversation',
-        buttonLabel: 'Go to conversation',
-        filters: {
-          type: constants.conversationArchiveType,
-        },
-      })
+    const conversation = await Conversation.select()
+    if (conversation != null) {
       navigateToConversation(conversation.url)
-    } catch (e) {
-      // user canceled, do nothing.
     }
   })
 
   emitter.on(events.createConversation, async () => {
-    try {
-      const conversation = await DatArchive.create({
-        title: 'A treealog conversation',
-        type: constants.conversationArchiveType,
-        prompt: true,
-      })
+    const conversation = await Conversation.create()
+    if (conversation != null) {
       navigateToConversation(conversation.url)
-    } catch (error) {
-      // user canceled, do nothing.
     }
   })
 
