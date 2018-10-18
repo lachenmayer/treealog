@@ -1,4 +1,4 @@
-const Conversation = require('treealog/conversation')
+const Conversation = require('treealog/lib/conversation')
 
 const { events } = require('treealog/constants')
 
