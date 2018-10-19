@@ -11,6 +11,7 @@
     "choo": "^6.13.0",
     "cuid": "^2.1.4",
     "nanobus": "^4.3.4",
+    "nanolru": "^1.0.0",
     "nanostate": "^1.2.1"
   },
   "devDependencies": {

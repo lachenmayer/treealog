@@ -22,7 +22,7 @@ class ConversationView extends Component {
     }
 
     this.conversation = new Conversation(url)
-    const onload = () => this.rerender()
+    const onChange = () => this.rerender()
     const onerror = e => {
       console.error(e)
       if (e.noConversation) {
@@ -31,8 +31,8 @@ class ConversationView extends Component {
       }
     }
     this.conversation
-      .load()
-      .then(onload)
+      .watch(onChange)
+      .then(onChange)
       .catch(onerror)
   }
   createElement() {
@@ -100,7 +100,7 @@ class ConversationView extends Component {
       return ''
     }
     const readOnly = this.conversation.readOnly
-    return html`<div>
+    return html`<div id="${btoa(video.url)}">
       <video controls width="320" height="240" src="${video.url}"></video>
       ${
         readOnly
@@ -118,7 +118,6 @@ class ConversationView extends Component {
 
   renderResponses(video) {
     if (video.responses.length > 0) {
-      console.log(video.responses)
       return html`<div>
         responses:
         ${this.renderVideos(video.responses)}
@@ -138,7 +137,7 @@ class ConversationView extends Component {
   async onResponse(videoBlob, responseTo) {
     const me = this.conversation.me
     await me.addVideo(videoBlob, responseTo)
-    await this.conversation.load() // TODO automatic sync
+    await this.conversation.sync() // TODO automatic sync
     this.rerender()
   }
 }
