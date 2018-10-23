@@ -48,8 +48,7 @@ class ConversationView extends Component {
       return this.renderLoading()
     }
 
-    const firstUse =
-      this.conversation.isOwner && this.conversation.contributors.length == 0
+    const firstUse = Object.keys(this.conversation.videos).length == 0
     if (firstUse) {
       return this.renderFirstUse()
     }
