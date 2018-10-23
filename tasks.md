@@ -8,6 +8,8 @@
   - [x] you can add multiple contributions
 - [x] invite page
 - [x] basic styles
+- [ ] bugs
+  - [ ] recorders disappear once you are added to a conversation
 - [ ] improvements
   - [ ] videos should play on click
   - [ ] how do you find out who is the owner? - need profile

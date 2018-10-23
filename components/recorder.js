@@ -6,6 +6,11 @@ class Recorder extends Component {
   constructor(_id, _state, _emit) {
     super()
 
+    this.props = {
+      responseTo: null,
+      onRecorded: function noop() {},
+    }
+
     this.state = nanostate('initial', {
       initial: { show: 'permissions' },
       permissions: { accepted: 'prerecording', error: 'error' },
@@ -69,6 +74,10 @@ class Recorder extends Component {
     })
   }
 
+  update() {
+    return false
+  }
+
   createElement(
     props = {
       responseTo: null /* string - link to a previous recording */,
@@ -77,82 +86,103 @@ class Recorder extends Component {
   ) {
     this.props = props
     const state = this.state.state
-
     if (state === 'initial') {
-      return html`<div class="recorder initial">
-        ${button(
-          this.props.responseTo == null
-            ? 'start the conversation'
-            : 'respond to this',
-          () => this.state.emit('show')
-        )}
-      </div>`
+      return this.renderInitial()
     }
-
     if (state === 'permissions') {
-      return html`<div class="recorder permissions">
-        <p>checking permissions...</p>
-      </div>`
+      return this.renderPermissions()
     }
-
     if (state === 'error') {
-      return html`
-        <div class="recorder error">
-          <p>something went wrong - did you give the page permission to record audio/video?</p>
-          <p>detailed error message: ${
-            this.error && this.error.message
-              ? this.error.message
-              : 'not available'
-          }</p>
-          ${button('try again', () => this.state.emit('retry'))}
-        </div>
-      `
+      return this.renderError()
     }
-
     if (state === 'prerecording') {
-      return html`
-        <div class="recorder prerecording">
-          ${this.cameraPreview.render(this.stream)}
-          ${button('start recording', () => this.state.emit('record'))}
-          ${button('cancel', () => this.state.emit('cancel'))}
-        </div>
-      `
+      return this.renderPrerecording()
     }
-
     if (state === 'recording') {
-      return html`
-        <div class="recorder recording">
-          ${this.cameraPreview.render(this.stream)}
-          ${button('finish recording', () => this.state.emit('finish'))}
-        </div>
-      `
+      return this.renderRecording()
     }
-
     if (state === 'postrecording') {
-      return html`<div class="recorder postrecording">fetching recording...</div>`
+      return this.renderPostrecording()
     }
-
     if (state === 'preview') {
-      return html`<div class="recorder preview">
-        ${this.recordingPreview.render(this.recording)}
-        ${button('use this recording', () => this.state.emit('use'))}
-        ${button('redo', () => this.state.emit('redo'))}
-      </div>`
+      return this.renderPreview()
     }
-
     if (state === 'done') {
-      return html`<div class="recorder saving">saving recording...</div>`
+      return this.renderDone()
     }
-
     return html`<div class="recorder error">internal error: unimplemented state "${state}"</div>`
-
-    function button(text, action) {
-      return html`<button onclick=${action}>${text}</button>`
-    }
   }
 
-  update() {
-    return false
+  renderInitial() {
+    return html`<div class="recorder initial">
+      ${this.renderButton(
+        this.props.responseTo == null
+          ? 'start the conversation'
+          : 'respond to this',
+        () => this.state.emit('show')
+      )}
+    </div>`
+  }
+
+  renderPermissions() {
+    return html`<div class="recorder permissions">
+      <p>checking permissions...</p>
+    </div>`
+  }
+
+  renderError() {
+    return html`
+      <div class="recorder error">
+        <p>something went wrong - did you give the page permission to record audio/video?</p>
+        <p>detailed error message: ${
+          this.error && this.error.message
+            ? this.error.message
+            : 'not available'
+        }</p>
+        ${this.renderButton('try again', () => this.state.emit('retry'))}
+      </div>
+    `
+  }
+
+  renderPrerecording() {
+    return html`
+      <div class="recorder prerecording">
+        ${this.cameraPreview.render(this.stream)}
+        ${this.renderButton('start recording', () => this.state.emit('record'))}
+        ${this.renderButton('cancel', () => this.state.emit('cancel'))}
+      </div>
+    `
+  }
+
+  renderRecording() {
+    return html`
+      <div class="recorder recording">
+        ${this.cameraPreview.render(this.stream)}
+        ${this.renderButton('finish recording', () =>
+          this.state.emit('finish')
+        )}
+      </div>
+    `
+  }
+
+  renderPostrecording() {
+    return html`<div class="recorder postrecording">fetching recording...</div>`
+  }
+
+  renderPreview() {
+    return html`<div class="recorder preview">
+      ${this.recordingPreview.render(this.recording)}
+      ${this.renderButton('use this recording', () => this.state.emit('use'))}
+      ${this.renderButton('redo', () => this.state.emit('redo'))}
+    </div>`
+  }
+
+  renderDone() {
+    return html`<div class="recorder saving">saving recording...</div>`
+  }
+
+  renderButton(text, action) {
+    return html`<button onclick=${action}>${text}</button>`
   }
 }
 
