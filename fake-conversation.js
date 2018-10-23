@@ -1,3 +1,4 @@
+global.DatArchive = require('node-dat-archive')
 const fs = require('fs').promises
 const readline = require('readline')
 const Conversation = require('treealog/lib/conversation')
