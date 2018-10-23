@@ -1,5 +1,5 @@
 exports.conversationArchiveType = 'treealog-conversation'
-exports.participantArchiveType = 'treealog-participant'
+exports.contributorArchiveType = 'treealog-contributor'
 
 exports.events = {
   createConversation: 'createConversation',

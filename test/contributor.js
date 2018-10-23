@@ -1,9 +1,9 @@
 const test = require('ava')
 const fs = require('fs').promises
-const Participant = require('treealog/lib/participant')
+const Contributor = require('treealog/lib/contributor')
 
 test('can add a video & read it', async t => {
-  const p = await Participant.create('dat://test')
+  const p = await Contributor.create('dat://test')
   const videoFile = await fs.readFile(__dirname + '/video.webm')
   const responseTo = 'dat://somevideo'
   const video = await p.addVideo(videoFile, responseTo)

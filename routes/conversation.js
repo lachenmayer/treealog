@@ -2,8 +2,8 @@ const Component = require('choo/component')
 const html = require('choo/html')
 const Recorder = require('treealog/components/recorder')
 const { events } = require('treealog/constants')
+const Contributor = require('treealog/lib/contributor')
 const Conversation = require('treealog/lib/conversation')
-const Participant = require('treealog/lib/participant')
 
 module.exports = function conversation(state, emit) {
   const url = state.params.url // defined in route in index.js
@@ -49,7 +49,7 @@ class ConversationView extends Component {
     }
 
     const firstUse =
-      this.conversation.isOwner && this.conversation.participants.length == 0
+      this.conversation.isOwner && this.conversation.contributors.length == 0
     if (firstUse) {
       return this.renderFirstUse()
     }
@@ -89,17 +89,19 @@ class ConversationView extends Component {
 
   renderConversation() {
     return html`<main>
-      ${this.renderRemarks(this.conversation.firsts)}
+      ${this.renderContributions(this.conversation.firsts)}
     </main>`
   }
 
-  renderRemarks(videos) {
+  renderContributions(videos) {
     return html`<div style="display: flex; flex-direction: row">
-      ${videos.map(url => this.renderRemark(this.conversation.videos[url]))}
+      ${videos.map(url =>
+        this.renderContribution(this.conversation.videos[url])
+      )}
     </div>`
   }
 
-  renderRemark(video) {
+  renderContribution(video) {
     if (video == null) {
       return ''
     }
@@ -121,7 +123,7 @@ class ConversationView extends Component {
     if (video.responses.length > 0) {
       return html`<div>
         responses:
-        ${this.renderRemarks(video.responses)}
+        ${this.renderContributions(video.responses)}
       </div>`
     } else {
       return ''
@@ -133,7 +135,7 @@ class ConversationView extends Component {
     if (me != null) {
       await me.addVideo(blob, responseTo)
     } else {
-      console.warn('could not get a participant object for "me".')
+      console.warn('could not get a contributor object for "me".')
     }
   }
 
@@ -141,7 +143,7 @@ class ConversationView extends Component {
     if (this.conversation.me == null) {
       const pendingUrl = localStorage.getItem('pending-invite/' + this.url)
       if (pendingUrl != null) {
-        await this.conversation.addParticipant(pendingUrl)
+        await this.conversation.addContributor(pendingUrl)
       }
     }
   }
@@ -151,8 +153,8 @@ class ConversationView extends Component {
     const me = this.conversation.me
     if (me == null) {
       try {
-        const me = await Participant.create(this.conversation.url)
-        const added = await this.conversation.addParticipant(me.url)
+        const me = await Contributor.create(this.conversation.url)
+        const added = await this.conversation.addContributor(me.url)
         if (!added) {
           localStorage.setItem('pending-invite/' + this.url, me.url)
         }

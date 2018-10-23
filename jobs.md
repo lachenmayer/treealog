@@ -24,7 +24,7 @@ I want to be notified that the conversation owner needs to add me to the convers
 So that I don't assume that my response will be seen by the people in the conversation
 
 When there aren't enough people (ie. none...) in my conversation
-I want to add participants to the conversation
+I want to add contributors to the conversation
 So that I can talk with others
 (this will only work if you are the conversation owner)
 
@@ -33,5 +33,5 @@ I want to see who is participating in that conversation
 So I know who's in it
 
 When I am in a conversation
-I want to see the seeding status for all the participants
-So I can figure out if some content is missing & tell the participant that they need to seed their stuff
+I want to see the seeding status for all the contributors
+So I can figure out if some content is missing & tell the contributor that they need to seed their stuff

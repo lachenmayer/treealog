@@ -1,5 +1,5 @@
 - [x] sync
-- [ ] adding participants
+- [ ] adding contributors
   - [x] anyone can respond to a conversation even if they're not the owner
   - [ ] when they respond they get a warning:
     - nobody else can see your contributions
