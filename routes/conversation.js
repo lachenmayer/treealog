@@ -21,25 +21,30 @@ class ConversationView extends Component {
       emit(events.createConversation)
     }
 
-    this.conversation = new Conversation(url)
-    const onChange = () => this.rerender()
-    const onerror = e => {
-      console.error(e)
-      if (e.noConversation) {
-        this.conversation = null
-        this.rerender()
-      }
-    }
-    this.conversation
-      .watch(onChange)
-      .then(onChange)
-      .catch(onerror)
+    this.conversation = null
+    this.setupConversation()
   }
+
+  async setupConversation() {
+    this.conversation = new Conversation(this.url)
+    this.conversation.on('update', () => {
+      console.log('↑')
+      this.rerender()
+    })
+    await this.conversation.ready
+    if (this.conversation.error != null) {
+      this.conversation = null
+    } else {
+      await this.addPending()
+    }
+    this.rerender()
+  }
+
   createElement() {
     if (this.conversation == null) {
       return this.renderNoConversation()
     }
-    if (!this.conversation.loaded) {
+    if (!this.conversation.ready) {
       return this.renderLoading()
     }
 
@@ -50,12 +55,6 @@ class ConversationView extends Component {
     }
 
     return this.renderConversation()
-
-    // if (isOwner) {
-    //   // TODO enable inviting more people
-    // } else {
-    //   // TODO enable creating a new conversation
-    // }
   }
 
   renderNoConversation() {
@@ -75,44 +74,46 @@ class ConversationView extends Component {
   renderFirstUse() {
     return html`<main>
     <p>This is a brand-new conversation. <strong>Record your first video to get started!</strong></p>
-    ${this.cache(Recorder, Recorder.first).render({
-      onRecorded: video => {
-        this.onFirstVideo(video)
-      },
-    })}
+    ${this.renderRecorder(null)}
   </main>`
+  }
+
+  renderRecorder(responseTo) {
+    return this.cache(Recorder, responseTo || Recorder.first).render({
+      responseTo,
+      onRecorded: blob => {
+        this.onResponse(blob, responseTo)
+      },
+    })
   }
 
   renderConversation() {
     return html`<main>
-      ${this.renderVideos(this.conversation.firsts)}
+      ${this.renderRemarks(this.conversation.firsts)}
     </main>`
   }
 
-  renderVideos(videos) {
+  renderRemarks(videos) {
     return html`<div style="display: flex; flex-direction: row">
-      ${videos.map(url => this.renderVideo(this.conversation.videos[url]))}
+      ${videos.map(url => this.renderRemark(this.conversation.videos[url]))}
     </div>`
   }
 
-  renderVideo(video) {
+  renderRemark(video) {
     if (video == null) {
       return ''
     }
-    const readOnly = this.conversation.readOnly
-    return html`<div id="${btoa(video.url)}">
+    const id = btoa(video.url) // TODO need a better way to get ids.
+    return html`<div id="${id}">
       <video controls width="320" height="240" src="${video.url}"></video>
-      ${
-        readOnly
-          ? ''
-          : this.cache(Recorder, video.url).render({
-              responseTo: video.url,
-              onRecorded: blob => {
-                this.onResponse(blob, video.url)
-              },
-            })
-      }
+      ${this.renderRecorder(video.url)}
       ${this.renderResponses(video)}
+    </div>`
+  }
+
+  renderVideo(videoUrl) {
+    return html`<div>
+      <video controls width="320" height="240" src="${videoUrl}"></video>
     </div>`
   }
 
@@ -120,24 +121,52 @@ class ConversationView extends Component {
     if (video.responses.length > 0) {
       return html`<div>
         responses:
-        ${this.renderVideos(video.responses)}
+        ${this.renderRemarks(video.responses)}
       </div>`
     } else {
       return ''
     }
   }
 
-  async onFirstVideo(videoBlob) {
-    const me = await Participant.create(this.conversation.url)
-    await me.addVideo(videoBlob, null /* first video has no response */)
-    await this.conversation.addParticipant(me)
-    this.rerender()
+  async onResponse(blob, responseTo) {
+    const me = await this.getOrCreateMe()
+    if (me != null) {
+      await me.addVideo(blob, responseTo)
+    } else {
+      console.warn('could not get a participant object for "me".')
+    }
   }
 
-  async onResponse(videoBlob, responseTo) {
+  async addPending() {
+    if (this.conversation.me == null) {
+      const pendingUrl = localStorage.getItem('pending-invite/' + this.url)
+      if (pendingUrl != null) {
+        await this.conversation.addParticipant(pendingUrl)
+      }
+    }
+  }
+
+  async getOrCreateMe() {
+    await this.addPending()
     const me = this.conversation.me
-    await me.addVideo(videoBlob, responseTo)
-    await this.conversation.sync() // TODO automatic sync
-    this.rerender()
+    if (me == null) {
+      try {
+        const me = await Participant.create(this.conversation.url)
+        const added = await this.conversation.addParticipant(me.url)
+        if (!added) {
+          localStorage.setItem('pending-invite/' + this.url, me.url)
+        }
+        return me
+      } catch (e) {
+        console.warn(e)
+        return null
+      }
+    } else {
+      if (!this.conversation.pendingInvite) {
+        // Remove the cached pending invite because we are in the conversation now.
+        localStorage.removeItem('pending-invite/' + this.conversation.url)
+      }
+      return me
+    }
   }
 }

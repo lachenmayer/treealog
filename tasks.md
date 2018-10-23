@@ -1,9 +1,14 @@
 - [x] sync
 - [ ] adding participants
-  - [ ] anyone can respond to a conversation even if they're not the owner
+  - [x] anyone can respond to a conversation even if they're not the owner
   - [ ] when they respond they get a warning:
     - nobody else can see your contributions
     - you need to ask the owner of the conversation to invite you using the following link: `dat://treealog/conversation/<X>/invite/<Y>`
+  - [ ] you get the same warning on first time use (ie. no videos) when you're not the owner
+  - [ ] you can add multiple contributions
 - [ ] invite page
+- [ ] basic styles
 - [ ] improvements
   - [ ] videos should play on click
+  - [ ] how do you find out who is the owner? - need profile
+  - [ ] get rid of sync/watch()

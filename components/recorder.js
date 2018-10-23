@@ -63,7 +63,9 @@ class Recorder extends Component {
     })
 
     this.state.on('*', _state => {
-      this.rerender()
+      if (this.element != null) {
+        this.rerender()
+      }
     })
   }
 
