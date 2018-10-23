@@ -17,6 +17,9 @@ class ConversationView extends Component {
 
     // globals
     this.cache = state.cache
+    this.selectConversation = () => {
+      emit(events.selectConversation)
+    }
     this.createConversation = () => {
       emit(events.createConversation)
     }
@@ -58,9 +61,9 @@ class ConversationView extends Component {
     const url = 'dat://' + this.url
     return html`<main>
       <p>the archive <a href=${url}>${url}</a> does not contain a conversation.</p>
-      <p><button onclick=${
-        this.createConversation
-      }>create a new conversation</button></p>
+      <p><button onclick=${this.createConversation}>
+        create a new conversation
+      </button></p>
     </main>`
   }
 
@@ -70,9 +73,33 @@ class ConversationView extends Component {
 
   renderFirstUse() {
     return html`<main>
-    <p>This is a brand-new conversation. <strong>Record your first video to get started!</strong></p>
-    ${this.renderRecorder(null)}
-  </main>`
+      ${this.renderHeader()}
+      <p>This is a brand-new conversation. <strong>Record your first video to get started!</strong></p>
+      ${this.renderRecorder(null)}
+    </main>`
+  }
+
+  renderConversation() {
+    return html`<main>
+      ${this.renderHeader()}
+      ${this.renderInviteWarning()}
+      ${this.renderContributions(this.conversation.firsts)}
+    </main>`
+  }
+
+  renderHeader() {
+    return html`<div class="header">
+      <h1>treealog 🌲</h1>
+      <button onclick=${this.selectConversation}>
+          go to an existing conversation
+      </button>
+      <button onclick=${this.createConversation}>
+        create a new conversation
+      </button>
+      <h2>${this.conversation.title} (${
+      this.conversation.contributors.length
+    } contributors)</h2>
+    </div>`
   }
 
   renderRecorder(responseTo) {
@@ -84,18 +111,12 @@ class ConversationView extends Component {
     })
   }
 
-  renderConversation() {
-    return html`<main>
-      ${this.renderInviteWarning()}
-      ${this.renderContributions(this.conversation.firsts)}
-    </main>`
-  }
-
   renderInviteWarning() {
     if (this.conversation.pendingInvite) {
-      return html`<div>
+      return html`<div class="pending-warning">
         <p><strong>Your contributions can't be seen by anyone else.</strong>
-        <p>Send this invite link to the owner of the conversation so that others can discover your contributions: ${this.renderInviteLink()}</p>
+        <p>Send this invite link to the owner of the conversation so that others can discover your contributions:</p>
+        <p>${this.renderInviteLink()}</p>
       </div>`
     } else {
       return ''
@@ -107,13 +128,13 @@ class ConversationView extends Component {
       window.location.href +
       '/invite/' +
       this.conversation.pendingContributor.replace('dat://', '')
-    return html`<input type="text" value="${inviteLink}" onclick=${e => {
+    return html`<input class="invite-link" type="text" value="${inviteLink}" onclick=${e => {
       e.currentTarget.select()
     }} />`
   }
 
   renderContributions(videos) {
-    return html`<div style="display: flex; flex-direction: row">
+    return html`<div class="contributions">
       ${videos.map(url =>
         this.renderContribution(this.conversation.videos[url])
       )}
@@ -124,28 +145,24 @@ class ConversationView extends Component {
     if (video == null) {
       return ''
     }
-    return html`<div>
-      ${
-        video.creator === this.conversation.pendingContributor
-          ? html`<p>(only visible to you)</p>`
-          : ''
-      }
-      <video controls width="320" height="240" src="${video.url}"></video>
+    const pending = video.creator === this.conversation.pendingContributor
+    return html`<div class="contribution ${pending ? ' pending' : ''}">
+      ${this.renderVideo(video.url)}
       ${this.renderRecorder(video.url)}
+      ${pending ? html`<div>(only visible to you)</div>` : ''}
       ${this.renderResponses(video)}
     </div>`
   }
 
   renderVideo(videoUrl) {
-    return html`<div>
+    return html`<div class="video">
       <video controls width="320" height="240" src="${videoUrl}"></video>
     </div>`
   }
 
   renderResponses(video) {
     if (video.responses.length > 0) {
-      return html`<div>
-        responses:
+      return html`<div class="responses">
         ${this.renderContributions(video.responses)}
       </div>`
     } else {

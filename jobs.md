@@ -29,3 +29,6 @@ These requirements are written in [Job Story](https://jtbd.info/) format, ie:
 | When there aren't enough people (ie. none...) in my conversation | I want to add contributors to the conversation | So that I can talk with others | 🆗 | you have to send people the conversation link & wait for them to send you the invite link back. |
 | When I am in a conversation | I want to see who is participating in that conversation | So I know who's in it | ⚠️ | - |
 | When I am in a conversation | I want to see the seeding status for all the contributors | So I can figure out if some content is missing & tell the contributor that they need to seed their stuff | ⚠️ | - |
+| When I am using treealog | I want it to look good | So that I can happily show it off to my design-conscious friends | ⚠️ | - |
+| When I own a conversation | I want to change the conversation name | So that I & others can recognize it | ⚠️ | - |
+| When I am in a conversation | I want to have a name & profile picture | So that others know who I am | ⚠️ | - |

@@ -10,7 +10,7 @@ class Recorder extends Component {
       initial: { show: 'permissions' },
       permissions: { accepted: 'prerecording', error: 'error' },
       error: { retry: 'permissions' },
-      prerecording: { record: 'recording' },
+      prerecording: { record: 'recording', cancel: 'initial' },
       recording: { finish: 'postrecording' },
       postrecording: { recorded: 'preview' },
       preview: { redo: 'recording', use: 'done' },
@@ -79,7 +79,7 @@ class Recorder extends Component {
     const state = this.state.state
 
     if (state === 'initial') {
-      return html`<div>
+      return html`<div class="recorder initial">
         ${button(
           this.props.responseTo == null
             ? 'start the conversation'
@@ -90,14 +90,14 @@ class Recorder extends Component {
     }
 
     if (state === 'permissions') {
-      return html`<div>
+      return html`<div class="recorder permissions">
         <p>checking permissions...</p>
       </div>`
     }
 
     if (state === 'error') {
       return html`
-        <div>
+        <div class="recorder error">
           <p>something went wrong - did you give the page permission to record audio/video?</p>
           <p>detailed error message: ${
             this.error && this.error.message
@@ -111,16 +111,17 @@ class Recorder extends Component {
 
     if (state === 'prerecording') {
       return html`
-        <div>
+        <div class="recorder prerecording">
           ${this.cameraPreview.render(this.stream)}
           ${button('start recording', () => this.state.emit('record'))}
+          ${button('cancel', () => this.state.emit('cancel'))}
         </div>
       `
     }
 
     if (state === 'recording') {
       return html`
-        <div>
+        <div class="recorder recording">
           ${this.cameraPreview.render(this.stream)}
           ${button('finish recording', () => this.state.emit('finish'))}
         </div>
@@ -128,11 +129,11 @@ class Recorder extends Component {
     }
 
     if (state === 'postrecording') {
-      return html`<div>fetching recording...</div>`
+      return html`<div class="recorder postrecording">fetching recording...</div>`
     }
 
     if (state === 'preview') {
-      return html`<div>
+      return html`<div class="recorder preview">
         ${this.recordingPreview.render(this.recording)}
         ${button('use this recording', () => this.state.emit('use'))}
         ${button('redo', () => this.state.emit('redo'))}
@@ -140,10 +141,10 @@ class Recorder extends Component {
     }
 
     if (state === 'done') {
-      return html`<div>saving recording...</div>`
+      return html`<div class="recorder saving">saving recording...</div>`
     }
 
-    return html`<div>internal error: unimplemented state "${state}"</div>`
+    return html`<div class="recorder error">internal error: unimplemented state "${state}"</div>`
 
     function button(text, action) {
       return html`<button onclick=${action}>${text}</button>`
@@ -165,7 +166,7 @@ class CameraPreview extends Component {
       this.video.srcObject = stream
       this.video.play()
     }
-    return this.video
+    return html`<div class="preview camera-preview">${this.video}</div>`
   }
 
   unload() {
@@ -192,7 +193,7 @@ class RecordingPreview extends Component {
       }
       this.video.play()
     }
-    return this.video
+    return html`<div class="preview recording-preview">${this.video}</div>`
   }
 
   unload() {

@@ -1,0 +1,48 @@
+body {
+  color: white;
+  background: black;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+}
+
+.contributions {
+  display: flex;
+  flex-direction: row;
+}
+
+.contribution {
+  margin: 20px auto;
+}
+
+.contribution .pending {
+  animation: flash 2s infinite alternate;
+}
+
+.video {
+  display: flex;
+  margin: auto;
+  padding: 20px;
+}
+
+.video video {
+  margin: auto;
+}
+
+.pending-warning {
+  padding: 20px;
+  animation: flash 2s infinite alternate;
+}
+
+.invite-link {
+  font-size: 1.5em;
+}
+
+@keyframes flash {
+  from {
+    background: #000;
+  }
+
+  to {
+    background: #050;
+  }
+}

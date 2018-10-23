@@ -7,7 +7,7 @@
   - [x] you get the same warning on first time use (ie. no videos) when you're not the owner
   - [x] you can add multiple contributions
 - [x] invite page
-- [ ] basic styles
+- [x] basic styles
 - [ ] improvements
   - [ ] videos should play on click
   - [ ] how do you find out who is the owner? - need profile
