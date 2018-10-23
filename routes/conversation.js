@@ -89,8 +89,30 @@ class ConversationView extends Component {
 
   renderConversation() {
     return html`<main>
+      ${this.renderInviteWarning()}
       ${this.renderContributions(this.conversation.firsts)}
     </main>`
+  }
+
+  renderInviteWarning() {
+    if (this.conversation.pendingInvite) {
+      return html`<div>
+        <p><strong>Your contributions can't be seen by anyone else.</strong>
+        <p>Send this invite link to the owner of the conversation so that others can discover your contributions: ${this.renderInviteLink()}</p>
+      </div>`
+    } else {
+      return ''
+    }
+  }
+
+  renderInviteLink() {
+    const inviteLink =
+      window.location.href +
+      '/invite/' +
+      this.conversation.pendingContributor.replace('dat://', '')
+    return html`<input type="text" value="${inviteLink}" onclick=${e => {
+      e.currentTarget.select()
+    }} />`
   }
 
   renderContributions(videos) {
@@ -105,8 +127,12 @@ class ConversationView extends Component {
     if (video == null) {
       return ''
     }
-    const id = btoa(video.url) // TODO need a better way to get ids.
-    return html`<div id="${id}">
+    return html`<div>
+      ${
+        video.creator === this.conversation.pendingContributor
+          ? html`<p>(only visible to you)</p>`
+          : ''
+      }
       <video controls width="320" height="240" src="${video.url}"></video>
       ${this.renderRecorder(video.url)}
       ${this.renderResponses(video)}
