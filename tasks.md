@@ -6,9 +6,9 @@
     - you need to ask the owner of the conversation to invite you using the following link: `dat://treealog/conversation/<X>/invite/<Y>`
   - [x] you get the same warning on first time use (ie. no videos) when you're not the owner
   - [x] you can add multiple contributions
-- [ ] invite page
+- [x] invite page
 - [ ] basic styles
 - [ ] improvements
   - [ ] videos should play on click
   - [ ] how do you find out who is the owner? - need profile
-  - [ ] get rid of sync/watch()
+  - [ ] invite page shows preview of convo + new contributions

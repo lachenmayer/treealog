@@ -1,4 +1,5 @@
 const fs = require('fs').promises
+const readline = require('readline')
 const Conversation = require('treealog/lib/conversation')
 const Contributor = require('treealog/lib/contributor')
 
@@ -14,5 +15,13 @@ async function main() {
   const contributor = await Contributor.create()
   await conversation.addContributor(contributor.url)
   await contributor.addVideo(video, null)
+
+  const input = readline.createInterface(process.stdin)
+  input.on('line', async contributor => {
+    const toInvite = new Contributor(contributor)
+    await toInvite.ready
+    console.log('Inviting', toInvite.title)
+    await conversation.addContributor(contributor)
+  })
 }
 main()

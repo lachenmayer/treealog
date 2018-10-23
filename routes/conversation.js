@@ -35,7 +35,7 @@ class ConversationView extends Component {
     if (this.conversation.error != null) {
       this.conversation = null
     } else {
-      await this.addPending()
+      await this.addPendingContributor()
     }
     this.rerender()
   }
@@ -47,12 +47,10 @@ class ConversationView extends Component {
     if (!this.conversation.ready) {
       return this.renderLoading()
     }
-
-    const firstUse = Object.keys(this.conversation.videos).length == 0
+    const firstUse = this.conversation.contributors.length == 0
     if (firstUse) {
       return this.renderFirstUse()
     }
-
     return this.renderConversation()
   }
 
@@ -164,7 +162,10 @@ class ConversationView extends Component {
     }
   }
 
-  async addPending() {
+  // We may have a pending contributor url stored in local storage,
+  // add them to the conversation so we can see our contributions
+  // even though we're not in the conversation yet.
+  async addPendingContributor() {
     if (this.conversation.me == null) {
       const pendingUrl = localStorage.getItem('pending-invite/' + this.url)
       if (pendingUrl != null) {
@@ -173,10 +174,12 @@ class ConversationView extends Component {
     }
   }
 
+  // If we are in the Conversation, returns our Contributor object.
+  // If we are not, creates a new 'pending' contributor and adds it to the conversation.
+  // Allows us to view content in the context of a conversation without actually
+  // being part of it.
   async getOrCreateMe() {
-    await this.addPending()
-    const me = this.conversation.me
-    if (me == null) {
+    if (this.conversation.me == null) {
       try {
         const me = await Contributor.create(this.conversation.url)
         const added = await this.conversation.addContributor(me.url)
@@ -193,7 +196,7 @@ class ConversationView extends Component {
         // Remove the cached pending invite because we are in the conversation now.
         localStorage.removeItem('pending-invite/' + this.conversation.url)
       }
-      return me
+      return this.conversation.me
     }
   }
 }
