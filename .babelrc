@@ -1,4 +1,5 @@
 {
+  "plugins": ["nanohtml/lib/babel.js"],
   "presets": [
     [
       "env",

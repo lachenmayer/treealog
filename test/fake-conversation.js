@@ -5,7 +5,7 @@ const Conversation = require('treealog/lib/conversation')
 const Contributor = require('treealog/lib/contributor')
 
 async function main() {
-  const video = await fs.readFile(__dirname + '/test/video.webm')
+  const video = await fs.readFile(__dirname + '/video.webm')
   const conversation = await Conversation.create()
   console.log(
     conversation.url.replace(

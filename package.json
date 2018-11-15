@@ -5,7 +5,7 @@
   "author": "Harry Lachenmayer <harrylachenmayer@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "parcel build --out-file bundle.js --out-dir . index.js",
+    "build": "parcel build --detailed-report --out-file bundle.js --out-dir . index.js",
     "dev": "parcel watch --out-file bundle.js --out-dir . index.js --no-hmr"
   },
   "dependencies": {
