@@ -1,6 +1,6 @@
-const Conversation = require('treealog/lib/conversation')
+const Conversation = require('../lib/conversation')
 
-const { events } = require('treealog/constants')
+const { events } = require('../constants')
 
 module.exports = function conversationsStore(_, emitter) {
   emitter.on(events.selectConversation, async () => {

@@ -1,6 +1,6 @@
 const test = require('ava')
 const fs = require('fs').promises
-const Contributor = require('treealog/lib/contributor')
+const Contributor = require('../lib/contributor')
 
 test('can add a video & read it', async t => {
   const p = await Contributor.create('dat://test')

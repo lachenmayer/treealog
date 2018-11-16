@@ -1,5 +1,5 @@
 const html = require('choo/html')
-const { events } = require('treealog/constants')
+const { events } = require('../constants')
 
 module.exports = function home(state, emit) {
   return html`

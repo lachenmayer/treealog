@@ -1,7 +1,7 @@
 const Component = require('choo/component')
 const html = require('choo/html')
-const Contributor = require('treealog/lib/contributor')
-const Conversation = require('treealog/lib/conversation')
+const Contributor = require('../lib/contributor')
+const Conversation = require('../lib/conversation')
 
 module.exports = function invite(state, emit) {
   const { url, contributor } = state.params

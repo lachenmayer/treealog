@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 global.DatArchive = require('node-dat-archive')
 const split = require('split')
-const Conversation = require('treealog/lib/conversation')
+const Conversation = require('./lib/conversation')
 
 const lines = process.stdin.pipe(split())
 forEach(lines, line => {

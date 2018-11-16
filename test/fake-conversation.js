@@ -1,8 +1,8 @@
 global.DatArchive = require('node-dat-archive')
 const fs = require('fs').promises
 const readline = require('readline')
-const Conversation = require('treealog/lib/conversation')
-const Contributor = require('treealog/lib/contributor')
+const Conversation = require('../lib/conversation')
+const Contributor = require('../lib/contributor')
 
 async function main() {
   const video = await fs.readFile(__dirname + '/video.webm')

@@ -1,9 +1,9 @@
 const Component = require('choo/component')
 const html = require('choo/html')
-const Recorder = require('treealog/components/recorder')
-const { events } = require('treealog/constants')
-const Contributor = require('treealog/lib/contributor')
-const Conversation = require('treealog/lib/conversation')
+const Recorder = require('../components/recorder')
+const { events } = require('../constants')
+const Contributor = require('../lib/contributor')
+const Conversation = require('../lib/conversation')
 
 module.exports = function conversation(state, emit) {
   const url = state.params.url // defined in route in index.js
