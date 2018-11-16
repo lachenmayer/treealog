@@ -8,16 +8,18 @@
     "build": "parcel build --detailed-report --out-file bundle.js --out-dir . index.js",
     "dev": "parcel watch --out-file bundle.js --out-dir . index.js --no-hmr"
   },
+  "bin": "seed.js",
   "dependencies": {
     "choo": "^6.13.0",
     "cuid": "^2.1.4",
     "nanobus": "^4.3.4",
-    "nanostate": "^1.2.1"
+    "nanostate": "^1.2.1",
+    "node-dat-archive": "^2.1.0",
+    "split": "^1.0.1"
   },
   "devDependencies": {
     "ava": "^0.25.0",
     "choo-devtools": "^2.5.1",
-    "node-dat-archive": "^2.1.0",
     "parcel": "^1.9.7"
   }
 }

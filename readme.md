@@ -30,8 +30,12 @@ However, the process might just be as awkward as recording a voicemail, who know
 
 ## ... _peer-to-peer_ ...
 
-Treealog can be accessed through [Beaker Browser](https://beakerbrowser.com/), which is an experimental browser that allows users to access sites using the [Dat](https://datproject.org/) protocol. A Dat archive (/ site) is identified by a long, random-looking address. By knowing a Dat archive's address (or _key_), it is possible to verify the authorship of the archive's contents, no matter where the content is received from. This is what makes Dat a _peer-to-peer_ protocol. Only a single person/device, the _owner_, can make changes to a Dat archive. (It is currently not easily possible to transfer ownership between devices.)
+Treealog can be accessed through [Beaker Browser](https://beakerbrowser.com/), which is an experimental browser that allows users to access sites using the [Dat](https://datproject.org/) protocol. A Dat archive (/ site) is identified by a long, random-looking address. By knowing a Dat archive's address (or _key_), it is possible to verify the authorship of the archive's contents, no matter where the content is received from. This is what makes Dat a _peer-to-peer_ protocol.
 
-In Treealog, a conversation is represented by a Dat archive. A conversation contains links to further Dat archives. These archives contain every individual's contributions to the conversation, one archive for every contributor.
+A current limitation in Dat is that only a single person/device, the _owner_, can make changes to a Dat archive. [Several solutions](https://github.com/datproject/planning) for this are currently in the works, but until these are ready, I wanted to experiment with what is currently possible.
 
-To become part of a conversation, the owner of the conversation archive needs to invite the new contributor.
+In Treealog, a conversation is represented by a Dat archive. A _conversation_ contains links to further Dat archives, _contributor_ archives. These links are simply files in a folder in the conversation archive containing the keys of the contributor archives. (In future, these could be represented as ["symlinks" or "mounts"](https://github.com/datprotocol/DEPs/issues/32), which is a proposed feature for the Dat protocol.)
+
+The contributor archives contain every individual's _contributions_ (currently video files) to the conversation. When loading a conversation archive, Treealog looks at the contributors folder, and also loads each of the contributor archives. The contributions are loaded from the contributor archives, and pieced together to form a single conversation.
+
+To become part of a conversation, the owner of the conversation archive needs to invite the new contributor. Under the hood, treealog creates a new file containing the new contributor's archive key, which can then be discovered by anyone watching the conversation archive.
