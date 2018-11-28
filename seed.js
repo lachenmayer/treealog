@@ -32,6 +32,10 @@ async function seedConversation(key) {
       } [${conversation.contributors.map(c => c.url).join(', ')}]`
     )
   })
+  const networkActivity = conversation.archive.createNetworkActivityStream()
+  networkActivity.addEventListener('network-changed', ({ peers }) => {
+    status(`network change: ${peers} peers`)
+  })
 
   function status(message) {
     console.error(`${new Date().toISOString()} ${conversation.url}: ${message}`)
