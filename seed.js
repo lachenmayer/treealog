@@ -17,27 +17,27 @@ async function seedConversation(key) {
   const conversation = new Conversation(key)
   await conversation.ready
   if (conversation.error != null) {
-    status(conversation.error)
+    log(conversation.error)
     return
   }
-  status(
+  log(
     `started seeding - contributors: ${
       conversation.contributors.length
     } [${conversation.contributors.map(c => c.url).join(', ')}]`
   )
   conversation.on('update', () => {
-    status(
+    log(
       `update - contributors: ${
         conversation.contributors.length
       } [${conversation.contributors.map(c => c.url).join(', ')}]`
     )
   })
   const networkActivity = conversation.archive.createNetworkActivityStream()
-  networkActivity.addEventListener('network-changed', ({ peers }) => {
-    status(`network change: ${peers} peers`)
+  networkActivity.addEventListener('network-changed', ({ connections }) => {
+    log(`network change: ${connections} peers`)
   })
 
-  function status(message) {
+  function log(message) {
     console.error(`${new Date().toISOString()} ${conversation.url}: ${message}`)
   }
 }
